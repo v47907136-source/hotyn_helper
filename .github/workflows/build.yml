@@ -1,0 +1,45 @@
+name: Build Hotyn Helper EXE
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Inject API key into source
+        shell: pwsh
+        run: |
+          $key = "${{ secrets.OPENROUTER_KEY }}"
+          (Get-Content MainForm.cs) -replace 'OPENROUTER_KEY_PLACEHOLDER', $key | Set-Content MainForm.cs
+
+      - name: Restore
+        run: dotnet restore HotynHelper.csproj
+
+      - name: Publish single-file EXE
+        run: >
+          dotnet publish HotynHelper.csproj
+          -c Release
+          -r win-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -o publish
+
+      - name: Upload EXE as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: HotynHelper-exe
+          path: publish/HotynHelper.exe
+          if-no-files-found: error
