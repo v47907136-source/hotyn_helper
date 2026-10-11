@@ -1,1 +1,16 @@
-
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>HotynHelper</AssemblyName>
+    <RootNamespace>HotynHelper</RootNamespace>
+    <Version>1.0.0</Version>
+    <Company>Hotyn</Company>
+    <Product>Hotyn Helper</Product>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <ApplicationIcon>crystal.ico</ApplicationIcon>
+  </PropertyGroup>
+</Project>
