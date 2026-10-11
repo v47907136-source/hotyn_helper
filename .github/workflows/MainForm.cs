@@ -11,17 +11,14 @@ namespace HotynHelper
 {
     public class MainForm : Form
     {
-        // ============ КЛЮЧ (заменяется при сборке через GitHub Secrets) ============
+        // ===== Ключ подставляется из GitHub Secrets при сборке =====
         private const string API_KEY = "OPENROUTER_KEY_PLACEHOLDER";
         private const string API_URL = "https://openrouter.ai/api/v1/chat/completions";
         private const string MODEL   = "deepseek/deepseek-v4-flash:free";
-        // ==========================================================================
 
-        // ============ ПАЛИТРА ============
         static readonly Color C_BG       = Color.FromArgb(9, 11, 15);
         static readonly Color C_BG_2     = Color.FromArgb(14, 17, 23);
         static readonly Color C_CARD     = Color.FromArgb(19, 23, 30);
-        static readonly Color C_CARD_HOV = Color.FromArgb(25, 30, 40);
         static readonly Color C_BORDER   = Color.FromArgb(32, 40, 52);
         static readonly Color C_ACCENT   = Color.FromArgb(88, 166, 255);
         static readonly Color C_ACCENT_2 = Color.FromArgb(56, 139, 253);
@@ -31,12 +28,10 @@ namespace HotynHelper
 
         static readonly Font F_H2 = new Font("Segoe UI", 14f, FontStyle.Bold);
         static readonly Font F_TX = new Font("Segoe UI", 10f);
-        static readonly Font F_SM = new Font("Segoe UI", 9f);
         static readonly Font F_XS = new Font("Segoe UI", 8.5f);
 
         static readonly HttpClient http = new HttpClient();
 
-        // ============ КОМПОНЕНТЫ ============
         private Panel _topBar = null!;
         private Panel _centerHost = null!;
         private RoundedPanel _card = null!;
@@ -69,18 +64,38 @@ namespace HotynHelper
             Font = F_TX;
             DoubleBuffered = true;
 
-            // ===== Верхняя панель =====
             _topBar = new Panel { Dock = DockStyle.Top, Height = 64, BackColor = C_BG_2 };
-            _topBar.Paint += (s, e) => { using var p = new Pen(C_BORDER, 1); e.Graphics.DrawLine(p, 0, _topBar.Height - 1, _topBar.Width, _topBar.Height - 1); };
+            _topBar.Paint += (s, e) =>
+            {
+                using var p = new Pen(C_BORDER, 1);
+                e.Graphics.DrawLine(p, 0, _topBar.Height - 1, _topBar.Width, _topBar.Height - 1);
+            };
             Controls.Add(_topBar);
 
             var logo = new LogoBox { Location = new Point(20, 12), Size = new Size(40, 40) };
             _topBar.Controls.Add(logo);
 
-            var lblLogo = new Label { Text = "Hotyn", Font = new Font("Segoe UI", 13f, FontStyle.Bold), ForeColor = C_TEXT, AutoSize = true, Location = new Point(70, 14), BackColor = Color.Transparent };
-            var lblLogo2 = new Label { Text = "Helper", Font = new Font("Segoe UI", 13f, FontStyle.Regular), ForeColor = C_ACCENT, AutoSize = true, Location = new Point(126, 14), BackColor = Color.Transparent };
+            var lblLogo = new Label
+            {
+                Text = "Hotyn",
+                Font = new Font("Segoe UI", 13f, FontStyle.Bold),
+                ForeColor = C_TEXT, AutoSize = true, BackColor = Color.Transparent
+            };
+            var lblLogo2 = new Label
+            {
+                Text = "Helper",
+                Font = new Font("Segoe UI", 13f, FontStyle.Regular),
+                ForeColor = C_ACCENT, AutoSize = true, BackColor = Color.Transparent
+            };
             _topBar.Controls.Add(lblLogo);
             _topBar.Controls.Add(lblLogo2);
+            _topBar.Resize += (s, e) =>
+            {
+                lblLogo.Location = new Point(70, 14);
+                lblLogo2.Location = new Point(70 + lblLogo.Width + 4, 14);
+            };
+            lblLogo.Location = new Point(70, 14);
+            lblLogo2.Location = new Point(126, 14);
 
             string[] chips = { "Правила", "Законы", "Crystal RP", "Карта" };
             int cx = 230;
@@ -93,57 +108,132 @@ namespace HotynHelper
                 cx += chip.Width + 8;
             }
 
-            // ===== Центральная область =====
             _centerHost = new Panel { Dock = DockStyle.Fill, BackColor = C_BG };
             Controls.Add(_centerHost);
             _centerHost.BringToFront();
 
-            _card = new RoundedPanel { Size = new Size(660, 340), BackColor = C_CARD, Radius = 16, BorderColor = C_BORDER };
+            _card = new RoundedPanel
+            {
+                Size = new Size(660, 340),
+                BackColor = C_CARD,
+                Radius = 16,
+                BorderColor = C_BORDER
+            };
             _centerHost.Controls.Add(_card);
             _centerHost.Resize += (s, e) => CenterCard();
 
             var searchIcon = new SearchIconBox { Size = new Size(72, 72) };
             _card.Controls.Add(searchIcon);
 
-            _lblTitle = new Label { Text = "Похожих пунктов нет", ForeColor = C_TEXT, Font = F_H2, TextAlign = ContentAlignment.MiddleCenter, BackColor = Color.Transparent, AutoSize = false, Height = 34 };
+            _lblTitle = new Label
+            {
+                Text = "Похожих пунктов нет",
+                ForeColor = C_TEXT, Font = F_H2,
+                TextAlign = ContentAlignment.MiddleCenter,
+                BackColor = Color.Transparent,
+                AutoSize = false, Height = 34
+            };
             _card.Controls.Add(_lblTitle);
 
-            _lblSub = new Label { Text = "Опишите ситуацию своими словами: кто, что сделал,\nпри каких обстоятельствах.", ForeColor = C_TEXT_2, Font = F_TX, TextAlign = ContentAlignment.MiddleCenter, BackColor = Color.Transparent, AutoSize = false, Height = 46 };
+            _lblSub = new Label
+            {
+                Text = "Опишите ситуацию своими словами: кто, что сделал,\nпри каких обстоятельствах.",
+                ForeColor = C_TEXT_2, Font = F_TX,
+                TextAlign = ContentAlignment.MiddleCenter,
+                BackColor = Color.Transparent,
+                AutoSize = false, Height = 46
+            };
             _card.Controls.Add(_lblSub);
 
-            _input = new CustomTextBox { Placeholder = "Введите вопрос по форуму...", Height = 46 };
+            _input = new CustomTextBox
+            {
+                Placeholder = "Введите вопрос по форуму...",
+                Height = 46
+            };
             _card.Controls.Add(_input);
 
-            _btn = new RoundButton { Text = "Разобрать  ▸", Height = 40, BackColor = C_ACCENT, ForeColor = Color.White, Radius = 10, Font = new Font("Segoe UI", 10f, FontStyle.Bold) };
+            _btn = new RoundButton
+            {
+                Text = "Разобрать  ▸",
+                Height = 40,
+                BackColor = C_ACCENT,
+                ForeColor = Color.White,
+                Radius = 10,
+                Font = new Font("Segoe UI", 10f, FontStyle.Bold)
+            };
             _btn.Click += async (s, e) => await AskAsync();
             _card.Controls.Add(_btn);
 
             _input.OnEnterPressed = async () => await AskAsync();
 
-            // ===== Область результатов =====
-            _resultsHost = new Panel { Dock = DockStyle.Fill, BackColor = C_BG, Visible = false, Padding = new Padding(28, 18, 28, 10) };
+            _resultsHost = new Panel
+            {
+                Dock = DockStyle.Fill,
+                BackColor = C_BG,
+                Visible = false,
+                Padding = new Padding(28, 18, 28, 10)
+            };
             _centerHost.Controls.Add(_resultsHost);
 
             var resultHeader = new Panel { Dock = DockStyle.Top, Height = 40, BackColor = C_BG };
             _resultsHost.Controls.Add(resultHeader);
 
-            var lblRes = new Label { Text = "Ответ", Font = F_H2, ForeColor = C_TEXT, AutoSize = true, Location = new Point(0, 4) };
+            var lblRes = new Label
+            {
+                Text = "Ответ",
+                Font = F_H2, ForeColor = C_TEXT, AutoSize = true,
+                Location = new Point(0, 4)
+            };
             resultHeader.Controls.Add(lblRes);
 
-            var btnBack = new LinkLabel { Text = "← Новый вопрос", Font = F_TX, LinkColor = C_ACCENT, ActiveLinkColor = C_ACCENT_2, VisitedLinkColor = C_ACCENT, AutoSize = true, Anchor = AnchorStyles.Top | AnchorStyles.Right };
-            btnBack.LinkClicked += (s, e) => { _resultsHost.Visible = false; _card.Visible = true; _card.BringToFront(); _input.FocusInput(); };
+            var btnBack = new LinkLabel
+            {
+                Text = "← Новый вопрос",
+                Font = F_TX,
+                LinkColor = C_ACCENT,
+                ActiveLinkColor = C_ACCENT_2,
+                VisitedLinkColor = C_ACCENT,
+                AutoSize = true,
+                Anchor = AnchorStyles.Top | AnchorStyles.Right
+            };
+            btnBack.LinkClicked += (s, e) =>
+            {
+                _resultsHost.Visible = false;
+                _card.Visible = true;
+                _card.BringToFront();
+                _input.FocusInput();
+            };
             resultHeader.Controls.Add(btnBack);
             resultHeader.Resize += (s, e) => { btnBack.Left = resultHeader.Width - btnBack.Width; };
 
-            _resultsBox = new RichTextBox { Dock = DockStyle.Fill, BackColor = C_CARD, ForeColor = C_TEXT, BorderStyle = BorderStyle.None, Font = new Font("Segoe UI", 10f), ReadOnly = true, ScrollBars = RichTextBoxScrollBars.Vertical };
+            _resultsBox = new RichTextBox
+            {
+                Dock = DockStyle.Fill,
+                BackColor = C_CARD,
+                ForeColor = C_TEXT,
+                BorderStyle = BorderStyle.None,
+                Font = new Font("Segoe UI", 10f),
+                ReadOnly = true,
+                ScrollBars = RichTextBoxScrollBars.Vertical
+            };
             _resultsHost.Controls.Add(_resultsBox);
             _resultsBox.BringToFront();
 
-            // ===== Статус =====
             var statusBar = new Panel { Dock = DockStyle.Bottom, Height = 26, BackColor = C_BG_2 };
-            statusBar.Paint += (s, e) => { using var p = new Pen(C_BORDER, 1); e.Graphics.DrawLine(p, 0, 0, statusBar.Width, 0); };
+            statusBar.Paint += (s, e) =>
+            {
+                using var p = new Pen(C_BORDER, 1);
+                e.Graphics.DrawLine(p, 0, 0, statusBar.Width, 0);
+            };
             Controls.Add(statusBar);
-            _lblStatus = new Label { Text = "готов", ForeColor = C_TEXT_3, Font = F_XS, AutoSize = true, Location = new Point(20, 6), BackColor = Color.Transparent };
+
+            _lblStatus = new Label
+            {
+                Text = "готов",
+                ForeColor = C_TEXT_3, Font = F_XS,
+                AutoSize = true, Location = new Point(20, 6),
+                BackColor = Color.Transparent
+            };
             statusBar.Controls.Add(_lblStatus);
         }
 
@@ -161,8 +251,13 @@ namespace HotynHelper
             iconBox.Left = (w - iconBox.Width) / 2;
             iconBox.Top = 26;
 
-            _lblTitle.Left = 30; _lblTitle.Top = 118; _lblTitle.Width = w - 60;
-            _lblSub.Left = 30; _lblSub.Top = 156; _lblSub.Width = w - 60;
+            _lblTitle.Left = 30;
+            _lblTitle.Top = 118;
+            _lblTitle.Width = w - 60;
+
+            _lblSub.Left = 30;
+            _lblSub.Top = 156;
+            _lblSub.Width = w - 60;
 
             int pad = 40, btnW = 160;
             _input.Left = pad;
@@ -174,16 +269,16 @@ namespace HotynHelper
             _btn.Width = btnW;
         }
 
-        // ============ ЛОГИКА ============
         private async Task AskAsync()
         {
             string question = _input.TextValue.Trim();
             if (string.IsNullOrEmpty(question)) return;
 
-            if (API_KEY.Contains("OPENROUTER_KEY_PLACEHOLDER"))
+            if (API_KEY.Contains("OPENROUTER_KEY_PLACEHOLDER") || API_KEY == "NO_KEY_CONFIGURED")
             {
                 _lblTitle.Text = "Ключ не настроен";
                 _lblSub.Text = "Добавь OPENROUTER_KEY в GitHub Secrets\nи запусти сборку заново.";
+                _lblStatus.Text = "нет ключа";
                 return;
             }
 
@@ -229,9 +324,9 @@ namespace HotynHelper
                         System.Net.HttpStatusCode.Unauthorized => "Ключ неверный. Проверь OPENROUTER_KEY в Secrets.",
                         System.Net.HttpStatusCode.PaymentRequired => "Нужен положительный баланс на openrouter.ai",
                         System.Net.HttpStatusCode.TooManyRequests => "Лимит 50 запросов в день исчерпан. Жди до завтра.",
-                        _ => "Сервер ответил ошибкой. Попробуй ещё раз."
+                        _ => "Сервер ответил ошибкой. Попробуй ещё раз.\n" + respText.Substring(0, Math.Min(200, respText.Length))
                     };
-                    _lblStatus.Text = "ошибка";
+                    _lblStatus.Text = "ошибка " + (int)resp.StatusCode;
                     return;
                 }
 
@@ -272,11 +367,15 @@ namespace HotynHelper
         protected override void OnResize(EventArgs e)
         {
             base.OnResize(e);
-            if (_card != null) { _card.Width = Math.Min(700, _centerHost.ClientSize.Width - 80); CenterCard(); }
+            if (_card != null)
+            {
+                _card.Width = Math.Min(700, _centerHost.ClientSize.Width - 80);
+                CenterCard();
+            }
         }
     }
 
-    // ==================== КАСТОМНЫЕ КОМПОНЕНТЫ ====================
+    // ==================== КОМПОНЕНТЫ ====================
 
     public class RoundedPanel : Panel
     {
@@ -458,43 +557,26 @@ namespace HotynHelper
 
     public class LogoBox : Control
     {
-        private Image? _img;
-
         public LogoBox()
         {
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.UserPaint | ControlStyles.ResizeRedraw, true);
-            try
-            {
-                string p = System.IO.Path.Combine(AppContext.BaseDirectory, "crystal.png");
-                if (System.IO.File.Exists(p))
-                    _img = Image.FromFile(p);
-            }
-            catch { }
         }
 
         protected override void OnPaint(PaintEventArgs e)
         {
             e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-            e.Graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
-            if (_img != null)
+            using var pen = new Pen(Color.FromArgb(88, 166, 255), 2);
+            int s = Math.Min(Width, Height) - 4;
+            var pts = new PointF[6];
+            for (int i = 0; i < 6; i++)
             {
-                e.Graphics.DrawImage(_img, 0, 0, Width, Height);
+                double a = Math.PI / 3 * i - Math.PI / 2;
+                pts[i] = new PointF(Width / 2f + (float)(s / 2.0 * Math.Cos(a)),
+                                    Height / 2f + (float)(s / 2.0 * Math.Sin(a)));
             }
-            else
-            {
-                using var pen = new Pen(Color.FromArgb(88, 166, 255), 2);
-                int s = Math.Min(Width, Height) - 4;
-                var pts = new PointF[6];
-                for (int i = 0; i < 6; i++)
-                {
-                    double a = Math.PI / 3 * i - Math.PI / 2;
-                    pts[i] = new PointF(Width / 2f + (float)(s / 2.0 * Math.Cos(a)),
-                                        Height / 2f + (float)(s / 2.0 * Math.Sin(a)));
-                }
-                e.Graphics.DrawPolygon(pen, pts);
-                using var brush = new SolidBrush(Color.FromArgb(88, 166, 255));
-                e.Graphics.FillEllipse(brush, Width / 2 - 4, Height / 2 - 4, 8, 8);
-            }
+            e.Graphics.DrawPolygon(pen, pts);
+            using var brush = new SolidBrush(Color.FromArgb(88, 166, 255));
+            e.Graphics.FillEllipse(brush, Width / 2 - 4, Height / 2 - 4, 8, 8);
         }
     }
 
