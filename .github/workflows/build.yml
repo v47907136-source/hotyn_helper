@@ -1,4 +1,4 @@
-name: Build Hotyn Helper EXE
+name: Build Hotyn Helper
 
 on:
   push:
@@ -18,16 +18,27 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: Inject API key into source
+      - name: Inject API key
         shell: pwsh
         run: |
           $key = "${{ secrets.OPENROUTER_KEY }}"
-          (Get-Content MainForm.cs) -replace 'OPENROUTER_KEY_PLACEHOLDER', $key | Set-Content MainForm.cs
+          if ([string]::IsNullOrWhiteSpace($key)) {
+            Write-Host "::warning::OPENROUTER_KEY не задан. Программа соберётся без ключа."
+            $key = "NO_KEY_CONFIGURED"
+          }
+          $path = "MainForm.cs"
+          if (Test-Path $path) {
+            (Get-Content $path) -replace 'OPENROUTER_KEY_PLACEHOLDER', $key | Set-Content $path
+            Write-Host "Ключ подставлен в $path"
+          } else {
+            Write-Host "::error::Файл MainForm.cs не найден в корне репозитория!"
+            exit 1
+          }
 
       - name: Restore
         run: dotnet restore HotynHelper.csproj
 
-      - name: Publish single-file EXE
+      - name: Publish
         run: >
           dotnet publish HotynHelper.csproj
           -c Release
@@ -37,9 +48,9 @@ jobs:
           -p:IncludeNativeLibrariesForSelfExtract=true
           -o publish
 
-      - name: Upload EXE as artifact
+      - name: Upload Portable EXE
         uses: actions/upload-artifact@v4
         with:
-          name: HotynHelper-exe
+          name: HotynHelper-portable
           path: publish/HotynHelper.exe
           if-no-files-found: error
