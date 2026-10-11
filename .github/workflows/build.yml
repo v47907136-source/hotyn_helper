@@ -13,6 +13,29 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Show repo files
+        shell: pwsh
+        run: |
+          Write-Host "==============================="
+          Write-Host "ФАЙЛЫ В КОРНЕ РЕПОЗИТОРИЯ:"
+          Write-Host "==============================="
+          Get-ChildItem -Force | Format-Table Name, Length -AutoSize
+          Write-Host ""
+          Write-Host "==============================="
+          Write-Host "ПРОВЕРКА НУЖНЫХ ФАЙЛОВ:"
+          Write-Host "==============================="
+          $files = @("HotynHelper.csproj","Program.cs","MainForm.cs")
+          foreach ($f in $files) {
+            if (Test-Path $f) {
+              Write-Host "OK  $f  найден" -ForegroundColor Green
+            } else {
+              Write-Host "MISSING  $f  ОТСУТСТВУЕТ" -ForegroundColor Red
+            }
+          }
+          Write-Host ""
+          Write-Host "СОДЕРЖИМОЕ ПАПОК:"
+          Get-ChildItem -Recurse -Directory | Select-Object FullName
+
       - name: Setup .NET 8
         uses: actions/setup-dotnet@v4
         with:
@@ -23,34 +46,20 @@ jobs:
         run: |
           $key = "${{ secrets.OPENROUTER_KEY }}"
           if ([string]::IsNullOrWhiteSpace($key)) {
-            Write-Host "::warning::OPENROUTER_KEY не задан. Программа соберётся без ключа."
+            Write-Host "::warning::Секрет OPENROUTER_KEY не задан."
             $key = "NO_KEY_CONFIGURED"
           }
-          $path = "MainForm.cs"
-          if (Test-Path $path) {
-            (Get-Content $path) -replace 'OPENROUTER_KEY_PLACEHOLDER', $key | Set-Content $path
-            Write-Host "Ключ подставлен в $path"
-          } else {
-            Write-Host "::error::Файл MainForm.cs не найден в корне репозитория!"
-            exit 1
-          }
+          (Get-Content MainForm.cs) -replace 'OPENROUTER_KEY_PLACEHOLDER', $key | Set-Content MainForm.cs
+          Write-Host "Ключ подставлен."
 
       - name: Restore
         run: dotnet restore HotynHelper.csproj
 
       - name: Publish
-        run: >
-          dotnet publish HotynHelper.csproj
-          -c Release
-          -r win-x64
-          --self-contained true
-          -p:PublishSingleFile=true
-          -p:IncludeNativeLibrariesForSelfExtract=true
-          -o publish
+        run: dotnet publish HotynHelper.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish
 
-      - name: Upload Portable EXE
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: HotynHelper-portable
+          name: HotynHelper-exe
           path: publish/HotynHelper.exe
-          if-no-files-found: error
