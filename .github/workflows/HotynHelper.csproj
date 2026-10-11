@@ -11,6 +11,5 @@
     <Company>Hotyn</Company>
     <Product>Hotyn Helper</Product>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
-    <ApplicationIcon>crystal.ico</ApplicationIcon>
   </PropertyGroup>
 </Project>
